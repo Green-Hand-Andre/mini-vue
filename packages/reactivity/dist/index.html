@@ -11,10 +11,18 @@
     <div id="app"></div>
     <script>
         const {reactive,effect} = VueReactivity;
-        const data = {name:11,age:000}
+        const data = {name:'张三',age:0,adress:123}
         console.log(data)
         const state = reactive(data)
-        console.log(state)
+        effect(()=>{
+            document.getElementById("app").innerHTML = state.name+"今年"+state.age+'岁了'
+        })
+        state.adress
+        setTimeout(()=>{
+            state.age+=1;
+        },1000)
+      
+        
         
         // const proxy = new Proxy(target)
 

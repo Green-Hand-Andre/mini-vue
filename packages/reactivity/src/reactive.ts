@@ -5,6 +5,7 @@ import {mutabHandles,ReactiveFlags} from './baseHandler';
 const reactiveMap = new WeakMap();
 
 export function reactive(target){
+    debugger
     if(!isObject(target)){
         return;
     }

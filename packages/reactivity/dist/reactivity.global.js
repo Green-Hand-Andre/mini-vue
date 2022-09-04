@@ -25,17 +25,62 @@ var VueReactivity = (() => {
   });
 
   // packages/reactivity/src/effect.ts
+  var activeEffect = void 0;
   var ReactiveRffect = class {
     constructor(fn) {
       this.fn = fn;
       this.active = true;
+      this.parent = null;
+      this.deps = [];
     }
     run() {
+      debugger;
+      if (!this.active) {
+        this.fn();
+      }
+      try {
+        this.parent = activeEffect;
+        activeEffect = this;
+        return this.fn();
+      } finally {
+        activeEffect = this.parent;
+        this.parent = null;
+      }
     }
   };
   function effect(fn) {
+    debugger;
     const _effect = new ReactiveRffect(fn);
     _effect.run();
+  }
+  var targetMap = /* @__PURE__ */ new WeakMap();
+  function track(target, type, key) {
+    debugger;
+    if (!activeEffect)
+      return;
+    let depsMap = targetMap.get(target);
+    if (!depsMap) {
+      targetMap.set(target, depsMap = /* @__PURE__ */ new Map());
+    }
+    let dep = depsMap.get(key);
+    if (!dep) {
+      depsMap.set(key, dep = /* @__PURE__ */ new Set());
+    }
+    let shouldTrack = !dep.has(activeEffect);
+    if (shouldTrack) {
+      debugger;
+      dep.add(activeEffect);
+      activeEffect.deps.push(dep);
+    }
+  }
+  function trigger(target, type, key, value, oldValue) {
+    const depsMap = targetMap.get(target);
+    if (!depsMap)
+      return;
+    const effects = depsMap.get(key);
+    effects && effects.forEach((effect2) => {
+      effect2.run();
+    });
   }
 
   // packages/shared/src/index.ts
@@ -46,19 +91,27 @@ var VueReactivity = (() => {
   // packages/reactivity/src/baseHandler.ts
   var mutabHandles = {
     get(target, key, receiver) {
+      debugger;
       if (key === "__v_isReactive" /* IS_REACTIVE */) {
         return true;
       }
+      track(target, "get", key);
       return Reflect.get(target, key, receiver);
     },
     set(target, key, value, receiver) {
-      return Reflect.set(target, key, value, receiver);
+      let oldValue = target[key];
+      let result = Reflect.set(target, key, value, receiver);
+      if (oldValue != result) {
+        trigger(target, "set", key, value, oldValue);
+      }
+      return result;
     }
   };
 
   // packages/reactivity/src/reactive.ts
   var reactiveMap = /* @__PURE__ */ new WeakMap();
   function reactive(target) {
+    debugger;
     if (!isObject(target)) {
       return;
     }
